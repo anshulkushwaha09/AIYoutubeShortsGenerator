@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+venv/
+
+# ── SECURITY: Never commit these ──────────────────────────────────────────────
+.env                          # API keys
+token.pickle                  # YouTube OAuth token
+client_secret.json            # Google OAuth client credentials
+model_list.txt                # Temp debug file
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+/dist
+/build
+/video-gen
+/assets/audio_clips
+/assets/final
+/assets/temp
+/assets/video_clips
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+/modules/__pycache__
+
+# Avatar source files
+/assets/avatar/avatar.mp4
+/assets/avatar/Gemini_Generated_Image_ww2ko4ww2ko4ww2k.png
+*.log

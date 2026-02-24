@@ -1,0 +1,9 @@
+google-genai
+python-dotenv
+requests
+edge-tts
+mutagen
+ffmpeg-python
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
