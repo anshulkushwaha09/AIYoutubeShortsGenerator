@@ -72,18 +72,70 @@ def _call_with_fallback(prompt: str) -> str:
 
 
 class ContentBrain:
-    # Broad niche pool — a random one is picked each run to force variety
+    # Vast niche pool — 52 categories to ensure topics never repeat for years
     NICHES = [
-        "space exploration & astronomy", "ocean deep-sea mysteries",
-        "ancient civilizations & history", "cutting-edge AI & robotics",
-        "extreme weather & natural disasters", "bizarre animal behaviour",
-        "unsolved historical mysteries", "human body & medical science",
-        "future technology & inventions", "psychology & mind tricks",
-        "economics & money secrets", "military history & strategy",
-        "geography & hidden places", "food science & nutrition facts",
-        "crime & true stories", "record-breaking engineering",
-        "viral social experiments", "environmental science",
-        "sports science & records", "languages & communication",
+        # Science & Nature
+        "space exploration & astronomy",
+        "ocean deep-sea mysteries",
+        "quantum physics & weird science",
+        "human body & medical science",
+        "bizarre animal behaviour",
+        "plant biology & nature secrets",
+        "genetics & DNA discoveries",
+        "climate & environmental science",
+        "chemistry & chemical reactions",
+        "extreme weather & natural disasters",
+        "geology & earth mysteries",
+        "microbiology & invisible worlds",
+
+        # History & Civilizations
+        "ancient civilizations & history",
+        "unsolved historical mysteries",
+        "military history & strategy",
+        "lost cities & archaeological finds",
+        "the history of money & economics",
+        "secret societies & hidden history",
+        "the history of medicine",
+        "world war facts & untold stories",
+        "empires that vanished",
+
+        # Technology & Future
+        "cutting-edge AI & robotics",
+        "future technology & inventions",
+        "cybersecurity & hacking stories",
+        "space technology & Mars missions",
+        "biotechnology & genetic engineering",
+        "the history & evolution of the internet",
+        "electric vehicles & energy revolution",
+        "surveillance technology & privacy",
+
+        # Human Mind & Society
+        "psychology & mind tricks",
+        "viral social experiments",
+        "languages & communication",
+        "philosophy & thought experiments",
+        "cults, propaganda & mass manipulation",
+        "neuroscience & the brain",
+        "sociology & human behaviour",
+        "sleep, dreams & consciousness",
+
+        # Business, Money & Power
+        "economics & money secrets",
+        "corporate scandals & frauds",
+        "record-breaking entrepreneurs",
+        "the dark side of big companies",
+        "cryptocurrency & blockchain",
+        "the world's most powerful families",
+
+        # Culture & Miscellaneous
+        "food science & nutrition facts",
+        "geography & hidden places",
+        "record-breaking engineering feats",
+        "crime & true heist stories",
+        "sports science & athletic records",
+        "art heists & cultural crimes",
+        "the science of music & sound",
+        "mythology & ancient legends",
     ]
 
     HISTORY_FILE = "topic_history.json"
