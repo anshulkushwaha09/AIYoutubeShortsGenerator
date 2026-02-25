@@ -2,6 +2,8 @@ import os
 import json
 import time
 import re
+import random
+from datetime import datetime
 from google import genai
 from dotenv import load_dotenv
 
@@ -70,18 +72,77 @@ def _call_with_fallback(prompt: str) -> str:
 
 
 class ContentBrain:
+    # Broad niche pool — a random one is picked each run to force variety
+    NICHES = [
+        "space exploration & astronomy", "ocean deep-sea mysteries",
+        "ancient civilizations & history", "cutting-edge AI & robotics",
+        "extreme weather & natural disasters", "bizarre animal behaviour",
+        "unsolved historical mysteries", "human body & medical science",
+        "future technology & inventions", "psychology & mind tricks",
+        "economics & money secrets", "military history & strategy",
+        "geography & hidden places", "food science & nutrition facts",
+        "crime & true stories", "record-breaking engineering",
+        "viral social experiments", "environmental science",
+        "sports science & records", "languages & communication",
+    ]
+
+    HISTORY_FILE = "topic_history.json"
+    HISTORY_LIMIT = 30  # Remember last N topics to avoid repeats
+
+    def _load_history(self) -> list:
+        if os.path.exists(self.HISTORY_FILE):
+            try:
+                with open(self.HISTORY_FILE, "r") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return []
+
+    def _save_history(self, history: list):
+        try:
+            with open(self.HISTORY_FILE, "w") as f:
+                json.dump(history[-self.HISTORY_LIMIT:], f, indent=2)
+        except Exception:
+            pass
+
     def get_trending_topic(self):
         """
-        In a full build, this would scrape Google Trends or Twitter.
-        For now, we ask Gemini to pick a viral niche topic.
+        Picks a unique topic every run by injecting:
+          - Today's date + current hour  (breaks Gemini's cache)
+          - A randomly chosen niche      (forces category variety)
+          - Recent topic history         (explicit avoidance list)
         """
+        niche    = random.choice(self.NICHES)
+        now      = datetime.utcnow()
+        date_str = now.strftime("%Y-%m-%d")
+        hour_str = now.strftime("%H:%M UTC")
+        history  = self._load_history()
+
+        avoid_block = ""
+        if history:
+            avoid_list = "\n".join(f"  - {t}" for t in history[-10:])
+            avoid_block = (
+                f"\n\nIMPORTANT — You MUST pick something NEW. "
+                f"Do NOT suggest any of these recently used topics:\n{avoid_list}"
+            )
+
         prompt = (
-            "Give me 1 specific, viral, and engaging topic for a Short Documentary. "
-            "It should be an 'Engaging Did you know' fact or a 'Fun/intriguing Engaging News'. "
-            "Return ONLY the topic name, nothing else."
+            f"Today is {date_str} at {hour_str}. "
+            f"Give me 1 specific, viral, and highly engaging topic for a YouTube Short documentary "
+            f"in the niche: **{niche}**. "
+            f"It must be a surprising 'Did You Know' fact, an incredible true story, or a mind-blowing "
+            f"recent discovery. Be very specific — not generic. "
+            f"Return ONLY the topic name, nothing else."
+            f"{avoid_block}"
         )
+
         topic = _call_with_fallback(prompt)
-        print(f"🎯 Selected Topic: {topic}")
+        print(f"🎯 Topic ({niche}): {topic}")
+
+        # Save to history so next run avoids it
+        history.append(topic)
+        self._save_history(history)
+
         return topic
 
     def generate_script(self, topic):

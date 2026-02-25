@@ -12,7 +12,7 @@ on:
 jobs:
   generate-and-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 30 # Safety: kill runaway jobs after 30 min
+    timeout-minutes: 45 # Increased to handle FFmpeg render time
 
     steps:
       # ── Step 1: Checkout code ───────────────────────────────────────────────
@@ -30,33 +30,40 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip" # Cache pip packages to speed up runs
+          cache: "pip"
 
       # ── Step 4: Install Python dependencies ──────────────────────────────────
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      # ── Step 5: Create .env from GitHub Secrets ──────────────────────────────
+      # ── Step 5: Restore topic history (prevents duplicate shorts) ────────────
+      # topic_history.json remembers the last 30 topics used — cached across runs
+      - name: Restore topic history cache
+        uses: actions/cache@v4
+        with:
+          path: topic_history.json
+          key: topic-history-${{ github.run_id }}
+          restore-keys: |
+            topic-history-
+
+      # ── Step 6: Create .env from GitHub Secrets ──────────────────────────────
       - name: Write environment variables
         run: |
           echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
           echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
 
-      # ── Step 6: Restore token.pickle from GitHub Secret ──────────────────────
-      # (Generated locally with auth_youtube.py, then encoded:
-      #  PowerShell: [Convert]::ToBase64String([IO.File]::ReadAllBytes('token.pickle'))
-      #  Paste result as GitHub Secret named YOUTUBE_TOKEN_B64)
+      # ── Step 7: Restore token.pickle from GitHub Secret ──────────────────────
       - name: Restore YouTube token
         run: |
           echo "${{ secrets.YOUTUBE_TOKEN_B64 }}" | base64 --decode > token.pickle
 
-      # ── Step 7: Run the bot ───────────────────────────────────────────────────
+      # ── Step 8: Run the bot ───────────────────────────────────────────────────
       - name: Generate and upload YouTube Short
         run: python main.py
 
-      # ── Step 8: Upload final video as artifact (debugging / archive) ──────────
+      # ── Step 9: Upload final video as artifact (debugging / archive) ──────────
       - name: Archive generated video
-        if: always() # Run even if main.py fails, to aid debugging
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: final-short-${{ github.run_id }}
