@@ -101,7 +101,18 @@ async def main(dry_run: bool = False):
         try:
             from modules.youtube_uploader import upload_video
             video_title = f"Did You Know? | {topic[:60]} #Shorts"
-            upload_video(final_video_path, title=video_title)
+            video_description = (
+                f"🤯 {topic}\n\n"
+                f"Did you know that some of the most incredible facts are hiding in plain sight? "
+                f"In this Short, we uncover the surprising truth behind one of the world's most "
+                f"fascinating stories — you won't believe it's real.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🔔 Subscribe for daily mind-blowing facts!\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"#Shorts #DidYouKnow #Facts #Science #MindBlowing "
+                f"#Educational #Viral #FunFacts #Amazing #LearnSomethingNew"
+            )
+            upload_video(final_video_path, title=video_title, description=video_description)
         except Exception as e:
             print(f"❌ YouTube Upload Error: {e}")
             print(f"   The video was still saved at: {final_video_path}")
