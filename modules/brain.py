@@ -202,13 +202,64 @@ class ContentBrain:
             print(clean_text)
             return None
 
+    def generate_description(self, topic: str, script_data: list) -> str:
+        """
+        Generates a unique, dynamic YouTube description for each Short.
+
+        Uses the actual script scenes so the description references real facts
+        from the video — not a generic template.
+        Falls back to a safe default if the API call fails.
+        """
+        print("✍️  Generating video description...")
+
+        # Extract scene text to give Gemini real content to work with
+        scene_texts = " | ".join(
+            scene.get("text", "") for scene in (script_data or [])[:5]
+        )
+
+        prompt = (
+            f"You are writing a YouTube Short description for a video about: \"{topic}\"\n\n"
+            f"The video covers these key points:\n{scene_texts}\n\n"
+            f"Write a YouTube description following this EXACT format (no extra text):\n\n"
+            f"Line 1: A single hook emoji + the topic as a punchy 1-line opener\n"
+            f"Line 2: (blank)\n"
+            f"Lines 3-4: A 2-sentence teaser that references a specific surprising fact "
+            f"from the video WITHOUT giving away the ending. Make it curiosity-driven.\n"
+            f"Line 5: (blank)\n"
+            f"Line 6: ━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Line 7: 🔔 Subscribe for daily mind-blowing facts!\n"
+            f"Line 8: (blank)\n"
+            f"Line 9: ━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Line 10: 10 relevant hashtags starting with #Shorts"
+        )
+
+        try:
+            description = _call_with_fallback(prompt)
+            return description.strip()
+        except Exception as e:
+            print(f"   ⚠️ Description generation failed ({e}), using default.")
+            # Safe fallback — still better than nothing
+            return (
+                f"🤯 {topic}\n\n"
+                f"What if everything you thought you knew was wrong? "
+                f"This Short uncovers a surprising truth that most people never learn.\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🔔 Subscribe for daily mind-blowing facts!\n\n"
+                f"━━━━━━━━━━━━━━━━━━━━━━━━\n"
+                f"#Shorts #DidYouKnow #Facts #Science #MindBlowing "
+                f"#Educational #Viral #FunFacts #Amazing #LearnSomethingNew"
+            )
+
 
 # --- TESTING THE MODULE ---
 if __name__ == "__main__":
     brain = ContentBrain()
     topic = brain.get_trending_topic()
     script = brain.generate_script(topic)
+    desc   = brain.generate_description(topic, script)
+    print("\n📋 Description preview:\n")
+    print(desc)
 
     with open("script.json", "w") as f:
         json.dump(script, f, indent=4)
-        print("✅ Script saved to script.json")
+        print("\n✅ Script saved to script.json")
