@@ -213,8 +213,9 @@ class ContentBrain:
     ### 1. SCRIPT REQUIREMENTS (The Voiceover):
     - **Perspective:** Strictly **3rd Person** ("Scientists found...", "The ocean hides...").
     - **Tone:** Engaging, fast-paced, logical. No fluff.
-    - **Structure:** 8-9 Scenes total.
-    - **Flow:** Hook -> Context -> Mechanism (How it works) -> Twist -> Outro.
+    - **Structure:** 9-10 Scenes total.
+    - **Flow:** Hook -> Context -> Mechanism (How it works) -> Twist -> Outro -> Call to Action.
+    - **MANDATORY FINAL SCENE:** The very last scene MUST be "Like and subscribe for more fun facts!" or similar.
 
     ### 2. VISUAL REQUIREMENTS (Dual Visuals):
     - For EVERY scene, provide TWO distinct search terms:
@@ -282,7 +283,9 @@ class ContentBrain:
             f"Line 7: 🔔 Subscribe for daily mind-blowing facts!\n"
             f"Line 8: (blank)\n"
             f"Line 9: ━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"Line 10: 10 relevant hashtags starting with #Shorts"
+            f"Line 10: 10 relevant hashtags starting with #Shorts\n"
+            f"Line 11: (blank)\n"
+            f"Line 12: 🔔 Like and Subscribe for daily amazing facts! 🚀"
         )
 
         try:
