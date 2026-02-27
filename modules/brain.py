@@ -7,67 +7,73 @@ from datetime import datetime
 from google import genai
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
-# Initialize Gemini client from environment variable
-_api_key = os.getenv("GEMINI_API_KEY")
-if not _api_key:
-    raise EnvironmentError("GEMINI_API_KEY not set. Please add it to your .env file.")
-client = genai.Client(api_key=_api_key)
+# Initialize Gemini clients from multiple potential environment variables
+# Supports: GEMINI_API_KEY, GEMINI_API_KEY_1, GEMINI_API_KEY_2, etc.
+def _initialize_clients():
+    keys = []
+    # Check for the primary key
+    primary = os.getenv("GEMINI_API_KEY")
+    if primary:
+        keys.append(primary)
+    
+    # Check for numbered keys (up to 10)
+    for i in range(1, 11):
+        key = os.getenv(f"GEMINI_API_KEY_{i}")
+        if key and key not in keys:
+            keys.append(key)
+    
+    if not keys:
+        raise EnvironmentError(
+            "No Gemini API keys found. Please add GEMINI_API_KEY_1, etc., to your .env file."
+        )
+    
+    print(f"📡 Found {len(keys)} Gemini API keys for rotation.")
+    return [genai.Client(api_key=k) for k in keys]
 
-# Model fallback chain — tries each in order if quota is hit or model unavailable.
-# These are the models confirmed available via the google-genai SDK (v1beta).
-# gemini-2.5-flash and gemini-2.0-flash-lite have separate quota buckets,
-# so rotating between them often bypasses a single-model 429.
+clients = _initialize_clients()
+
+# Model fallback chain
 FALLBACK_MODELS = [
-    "gemini-2.0-flash-lite",        # Lowest cost, try first
-    "gemini-2.0-flash",             # Standard quota bucket
-    "gemini-2.0-flash-001",         # Pinned version, separate bucket
-    "gemini-2.5-flash",             # Newer generation, different quota pool
-    "gemini-2.5-pro",               # Pro tier — highest chance of success
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-001",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
 ]
-
 
 def _call_with_fallback(prompt: str) -> str:
     """
-    Attempts to call the Gemini API using the FALLBACK_MODELS list.
-    On a 429 (quota exhausted) or model error, waits accordingly and tries the next model.
-    Raises a RuntimeError if every model fails.
+    Attempts to call Gemini using a double-layered fallback:
+    1. Tries all models on Client 1
+    2. If all fail, switches to Client 2 and tries all models again
+    3. Repeats until a success or all (Keys x Models) are exhausted.
     """
     last_error = None
 
-    for model in FALLBACK_MODELS:
-        try:
-            print(f"   🤖 Trying model: {model}...")
-            response = client.models.generate_content(model=model, contents=prompt)
-            print(f"   ✅ Success with: {model}")
-            return response.text.strip()
+    for i, client_inst in enumerate(clients):
+        print(f"   🔑 Using API Key #{i+1}...")
+        for model in FALLBACK_MODELS:
+            try:
+                print(f"      🤖 Trying model: {model}...")
+                response = client_inst.models.generate_content(model=model, contents=prompt)
+                return response.text.strip()
 
-        except Exception as e:
-            err_str = str(e)
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                # Try to extract retryDelay from the error message (e.g. 'retryDelay': '23s')
-                match = re.search(r"retryDelay\W{0,3}(\d+)", err_str)
-                wait_sec = int(match.group(1)) if match else 5
-                print(f"   ⚠️ Quota hit on {model} — waiting {wait_sec}s then trying next model...")
-                time.sleep(wait_sec)
-            elif "404" in err_str or "not found" in err_str.lower():
-                print(f"   ⚠️ Model {model} not available — trying next...")
-            else:
-                print(f"   ⚠️ Error on {model}: {e} — trying next...")
-            last_error = e
+            except Exception as e:
+                err_str = str(e)
+                if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                    print(f"      ⚠️ Quota hit on {model} (Key #{i+1})")
+                elif "404" in err_str or "not found" in err_str.lower():
+                    print(f"      ⚠️ Model {model} unavailable.")
+                else:
+                    print(f"      ⚠️ Error on {model}: {e}")
+                last_error = e
 
     raise RuntimeError(
-        "\n❌ All Gemini models hit quota limits.\n"
-        "This is a daily free-tier limit on your Google Cloud project.\n\n"
-        "Fix options:\n"
-        "  1. Wait until tomorrow (free quota resets daily at midnight Pacific)\n"
-        "  2. Enable billing on your project for higher quotas:\n"
-        "     https://console.cloud.google.com/billing\n"
-        "  3. Create a new Google Cloud project and generate a fresh API key:\n"
-        "     https://aistudio.google.com/app/apikey\n"
-        f"  Last error: {last_error}"
+        f"❌ All {len(clients)} API keys and all models hit quota limits.\n"
+        f"Last error: {last_error}"
     )
 
 

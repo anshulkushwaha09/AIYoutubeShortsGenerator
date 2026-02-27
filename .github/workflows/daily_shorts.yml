@@ -51,7 +51,11 @@ jobs:
       # ── Step 6: Create .env from GitHub Secrets ──────────────────────────────
       - name: Write environment variables
         run: |
-          echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+          echo "GEMINI_API_KEY_1=${{ secrets.GEMINI_API_KEY_1 }}" >> .env
+          echo "GEMINI_API_KEY_2=${{ secrets.GEMINI_API_KEY_2 }}" >> .env
+          echo "GEMINI_API_KEY_3=${{ secrets.GEMINI_API_KEY_3 }}" >> .env
+          echo "GEMINI_API_KEY_4=${{ secrets.GEMINI_API_KEY_4 }}" >> .env
+          echo "GEMINI_API_KEY_5=${{ secrets.GEMINI_API_KEY_5 }}" >> .env
           echo "PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}" >> .env
 
       # ── Step 7: Restore token.pickle from GitHub Secret ──────────────────────
