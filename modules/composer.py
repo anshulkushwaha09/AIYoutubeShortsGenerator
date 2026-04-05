@@ -1,25 +1,26 @@
 import os
 import random
 import ffmpeg
+import re
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Caption helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Vibrant color palette for the main text — cycles per caption line
-CAPTION_COLORS = [
-    "#FFE500",   # Bright yellow
-    "#00E5FF",   # Electric cyan
-    "#FF6B00",   # Hot orange
-    "#FF2D8B",   # Neon pink
-]
+# Color palette for captions
+CAPTION_COLORS = ["#FFFFFF"] # Pure white
+HIGHLIGHT_COLOR = "#FFD700" # Golden (Target hex)
 
-# Number of 3-D depth layers drawn behind the main text
+# ASS Color: BGR format (BGR: 00 D7 FF -> Gold)
+ASS_GOLD = "&H00D7FF&"
+ASS_WHITE = "&H00FFFFFF&"
+
+# Number of 3-D depth layers drawn behind the main text (Used only for drawtext fallback)
 DEPTH_LAYERS = 5
 
 # Font size (px). At 56px bold, ~30 chars fit within 1080px.
-FONT_SIZE = 56
+FONT_SIZE = 64
 
 # Maximum characters per wrapped line. Keep enough margin so long words fit.
 MAX_CHARS_PER_LINE = 24
@@ -34,15 +35,29 @@ def _wrap_text(text: str, max_chars: int = MAX_CHARS_PER_LINE) -> list[str]:
     Uses word-boundary wrapping so words are never cut mid-character.
     """
     words = text.split()
-    lines, current = [], ""
+    lines = []
+    current_line = []
+    current_len = 0
+
     for word in words:
-        if current and len(current) + 1 + len(word) > max_chars:
-            lines.append(current)
-            current = word
+        # Check length WITHOUT ** markers to be accurate
+        clean_word = word.replace("**", "")
+        if current_len + len(clean_word) + 1 > max_chars:
+            if current_line:
+                lines.append(" ".join(current_line))
+                current_line = [word]
+                current_len = len(clean_word)
+            else:
+                lines.append(word)
+                current_line = []
+                current_len = 0
         else:
-            current = (current + " " + word).strip()
-    if current:
-        lines.append(current)
+            current_line.append(word)
+            current_len += len(clean_word) + 1
+
+    if current_line:
+        lines.append(" ".join(current_line))
+
     return lines
 
 
@@ -63,83 +78,103 @@ class Composer:
     def __init__(self):
         self.temp_dir    = os.path.join(os.getcwd(), "assets", "temp")
         self.final_dir   = os.path.join(os.getcwd(), "assets", "final")
-        self.avatar_path = os.path.join(os.getcwd(), "assets", "avatar", "avatars.mp4")
         self.font_path   = os.path.join(os.getcwd(), "assets", "fonts", "Montserrat-Bold.ttf")
 
         os.makedirs(self.temp_dir,  exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
-        self.transitions = ['fade', 'diagbr', 'diagtl']
+        # Elite cinematic transitions
+        self.transitions = ['fade', 'diagbr', 'diagtl', 'wipeleft', 'wiperight', 'circleopen', 'horzopen']
 
     # ── internal ──────────────────────────────────────────────────────────────
 
-    def _font_opts(self) -> dict:
-        """Base drawtext options shared by every layer."""
-        opts = {"fontsize": FONT_SIZE}
-        if os.path.exists(self.font_path):
-            opts["fontfile"] = self.font_path.replace("\\", "/")
-        return opts
-
-    def _add_caption(self, video_stream, text: str):
+    def _apply_motion(self, stream):
         """
-        Burns styled, 3-D coloured captions into *video_stream*.
-
-        Strategy:
-          • Split text into lines (one drawtext call per line → no \\n quoting issues).
-          • Per line, draw DEPTH_LAYERS dark-offset copies first (3-D extrusion).
-          • Then draw the coloured main text on top.
-          • Colour cycles through CAPTION_COLORS per line for a vibrant look.
-          • Every layer has a thick black border so text pops on any background.
+        Applies a random cinematic motion effect (Zoom-In or Subtle Pan).
+        Utilizes FFmpeg's zoompan filter for vertical 1080x1920 videos.
         """
-        lines = _wrap_text(text, max_chars=MAX_CHARS_PER_LINE)
-        n = len(lines)
-        line_h = FONT_SIZE + LINE_SPACING
-
-        # Block starts at 72 % of frame height, centred vertically within its block
-        # y_base_expr returns the top Y for line index i
-        def y_expr(i: int) -> str:
-            # total block height = n * line_h
-            # centre of block at h*0.72
-            # top of block = h*0.72 - (n*line_h)/2
-            offset = i * line_h - (n * line_h) // 2
-            sign   = "+" if offset >= 0 else "-"
-            return f"(h*0.72){sign}{abs(offset)}"
-
-        base = self._font_opts()
-
-        for i, line in enumerate(lines):
-            safe = _escape_drawtext(line)
-            color = CAPTION_COLORS[i % len(CAPTION_COLORS)]
-            y     = y_expr(i)
-
-            # ── 3-D depth layers (dark, offset diagonally) ────────────────
-            for d in range(DEPTH_LAYERS, 0, -1):
-                video_stream = video_stream.filter(
-                    "drawtext",
-                    **base,
-                    text=safe,
-                    fontcolor="0x1a0a00@0.85",          # Very dark brown, semi-transparent
-                    borderw=3,
-                    bordercolor="black",
-                    x=f"(w-text_w)/2+{d * 2}",          # Shift right
-                    y=f"({y})+{d * 2}",                  # Shift down
-                )
-
-            # ── Main coloured text (top layer) ────────────────────────────
-            video_stream = video_stream.filter(
-                "drawtext",
-                **base,
-                text=safe,
-                fontcolor=color,
-                borderw=4,                               # Thick black outline
-                bordercolor="black",
-                shadowcolor="black@0.6",
-                shadowx=2,
-                shadowy=2,
-                x="(w-text_w)/2",                       # Always centred
-                y=y,
+        motion_type = random.choice(['zoom_in', 'zoom_out', 'pan_center'])
+        
+        if motion_type == 'zoom_in':
+            # Subtly zoom into center: Starts at 1.0, ends around 1.15
+            return stream.filter(
+                'zoompan', 
+                z='min(pzoom+0.001,1.5)', 
+                d=1, 
+                x='iw/2-(iw/zoom/2)', 
+                y='ih/2-(ih/zoom/2)', 
+                s='1080x1920', 
+                fps=30
+            )
+        elif motion_type == 'zoom_out':
+            # Start slightly zoomed (1.2) and zoom out to 1.0
+            return stream.filter(
+                'zoompan',
+                z='max(1.3-0.001*on,1.0)',
+                d=1,
+                x='iw/2-(iw/zoom/2)',
+                y='ih/2-(ih/zoom/2)',
+                s='1080x1920',
+                fps=30
+            )
+        else:
+            # Subtle vertical drift (Pan)
+            return stream.filter(
+                'zoompan',
+                z='1.1', # Fixed zoom to enable panning
+                d=1,
+                x='iw/2-(iw/zoom/2)',
+                y='(ih/2-(ih/zoom/2)) + (ih*0.05*sin(on/10))', # Slight vertical wave
+                s='1080x1920',
+                fps=30
             )
 
-        return video_stream
+    def _add_caption(self, video_stream, text: str, scene_id: int):
+        """
+        Generates a temporary .ass file with word-level highlighting
+        and burns it into the video stream using the subtitles filter.
+        """
+        # 1. Wrap and Parse
+        lines = _wrap_text(text, max_chars=MAX_CHARS_PER_LINE)
+        
+        # Replace **word** with {\c&H00D7FF&}word{\c&HFFFFFF&}
+        ass_lines = []
+        for line in lines:
+            # Replaces **text** with colored text using ASS tags.
+            # BGR format: Gold #FFD700 -> &H00D7FF&
+            # Fixed escaping: ASS tags use single {}, f-strings need {{ to produce literal {
+            colored_line = re.sub(r'\*\*(.*?)\*\*', rf'{{\\c{ASS_GOLD}}}\1{{\\c{ASS_WHITE}}}', line)
+            ass_lines.append(colored_line)
+        
+        display_text = "\\N".join(ass_lines)
+        
+        # 2. Write .ass File
+        ass_path = os.path.join(self.temp_dir, f"sub_{scene_id}.ass")
+        
+        # Style definition for Netflix-style captions
+        # Alignment 2 (Bottom Center), MarginV 340 (Typical for mobile shorts)
+        try:
+            with open(ass_path, "w", encoding="utf-8") as f:
+                f.write("[Script Info]\nScriptType: v4.00+\nPlayResX: 1080\nPlayResY: 1920\nScaledBorderAndShadow: yes\n\n")
+                f.write("[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n")
+                f.write(f"Style: Default,Arial,{FONT_SIZE},&H00FFFFFF&,&H000000FF&,&H00000000&,&H00000000&,1,0,0,0,100,100,0,0,1,4,2,2,10,10,340,1\n\n")
+                f.write("[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n")
+                f.write(f"Dialogue: 0,0:00:00.00,0:10:00.00,Default,,0,0,0,,{display_text}\n")
+        except Exception as e:
+            print(f"⚠️ Failed to write ASS file: {e}")
+            return video_stream
+
+        # 3. Apply Subtitles Filter
+        # Use relative path + forward slashes for the subtitles filter.
+        # This keeps the filename simple and avoids Windows drive colons (:) 
+        # which FFmpeg treats as a filter separator.
+        try:
+            rel_path = os.path.relpath(ass_path, os.getcwd())
+            clean_path = rel_path.replace("\\", "/")
+            return video_stream.filter("subtitles", filename=clean_path)
+        except Exception:
+            # Fallback for complex path scenarios
+            clean_path_abs = ass_path.replace("\\", "/").replace(":", "\\:")
+            return video_stream.filter("subtitles", filename=clean_path_abs)
 
     # ── public ────────────────────────────────────────────────────────────────
 
@@ -150,55 +185,48 @@ class Composer:
         except:
             return 0.0
 
-    def process_scene(self, scene, video_pair, is_avatar=False):
+    def process_scene(self, scene, video_pair):
         """
-        Combines Audio + Visuals + Caption for one scene.
+        Combines Audio + Visuals + Caption for one scene/segment.
         """
         scene_id       = scene['id']
         audio_path     = scene['audio_path']
         total_duration = scene['duration']
-        caption_text   = scene.get('text', '')
+        caption_text   = scene.get('caption_text', '')
         output_path    = os.path.join(self.temp_dir, f"scene_{scene_id}.mp4")
 
         try:
             input_audio = ffmpeg.input(audio_path)
 
-            if is_avatar:
-                # ── AVATAR MODE ────────────────────────────────────────────
-                print(f"   ⚙️ Processing Scene {scene_id}: 🤖 Avatar Mode (Cropped)")
-                video_stream = (
-                    ffmpeg.input(video_pair[0], stream_loop=-1)
-                    .trim(duration=total_duration + 0.5)
-                    .setpts('PTS-STARTPTS')
-                    .filter('crop', 'iw', 'ih-150', 0, 0)
-                    .filter('scale', 1080, 1920, force_original_aspect_ratio='increase')
-                    .filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
-            else:
-                # ── DUAL VIDEO MODE (50/50 split) ──────────────────────────
-                print(f"   ⚙️ Processing Scene {scene_id}: 🎞️ A/B Split Mode")
-                path_a, path_b = video_pair
-                duration_a = total_duration / 2
-                duration_b = (total_duration / 2) + 0.5
+            # ── DUAL VIDEO MODE (50/50 split) ──────────────────────────
+            print(f"   ⚙️ Processing Segment {scene_id}: 🎞️ Dual-Stock Mode")
+            path_a, path_b = video_pair
+            duration_a = total_duration / 2
+            duration_b = (total_duration / 2) + 0.1 # Small overlap for continuity
 
-                stream_a = (
-                    ffmpeg.input(path_a, stream_loop=-1)
-                    .trim(duration=duration_a).setpts('PTS-STARTPTS')
-                    .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
-                stream_b = (
-                    ffmpeg.input(path_b, stream_loop=-1)
-                    .trim(duration=duration_b).setpts('PTS-STARTPTS')
-                    .filter('scale', 1080, 1920).filter('crop', 1080, 1920)
-                    .filter('fps', fps=30, round='up')
-                )
-                video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
+            stream_a = (
+                ffmpeg.input(path_a, stream_loop=-1)
+                .trim(duration=duration_a).setpts('PTS-STARTPTS')
+                .filter('scale', 1080, 1920, force_original_aspect_ratio='increase')
+                .filter('crop', 1080, 1920)
+                .filter('fps', fps=30, round='up')
+            )
+            stream_a = self._apply_motion(stream_a)
+
+            stream_b = (
+                ffmpeg.input(path_b, stream_loop=-1)
+                .trim(duration=duration_b).setpts('PTS-STARTPTS')
+                .filter('scale', 1080, 1920, force_original_aspect_ratio='increase')
+                .filter('crop', 1080, 1920)
+                .filter('fps', fps=30, round='up')
+            )
+            stream_b = self._apply_motion(stream_b)
+
+            video_stream = ffmpeg.concat(stream_a, stream_b, v=1, a=0)
 
             # ── Burn captions ──────────────────────────────────────────────
             if caption_text:
-                video_stream = self._add_caption(video_stream, caption_text)
+                video_stream = self._add_caption(video_stream, caption_text, scene_id)
 
             # ── Encode ────────────────────────────────────────────────────
             runner = ffmpeg.output(
@@ -209,30 +237,19 @@ class Composer:
             return output_path
 
         except ffmpeg.Error as e:
-            print(f"❌ Render Fail Scene {scene_id}: {e.stderr.decode('utf8') if e.stderr else str(e)}")
+            print(f"❌ Render Fail Segment {scene_id}: {e.stderr.decode('utf8') if e.stderr else str(e)}")
             return None
 
     def render_all_scenes(self, script_data, video_pairs):
         rendered_paths = []
-        avatar_indices = []
+        segments = script_data.get("segments", [])
 
-        if len(script_data) >= 4 and os.path.exists(self.avatar_path):
-            valid_range = list(range(1, len(script_data) - 1))
-            count_to_pick = 2 if len(valid_range) >= 2 else 1
-            avatar_indices = sorted(random.sample(valid_range, count_to_pick))
-            print(f"🎲 Avatar set for Scenes: {[i+1 for i in avatar_indices]}")
-
-        for i, scene in enumerate(script_data):
+        for i, segment in enumerate(segments):
             current_pair = video_pairs[i]
-            is_avatar    = False
-
-            if i in avatar_indices:
-                current_pair = (self.avatar_path, None)
-                is_avatar    = True
-            elif current_pair is None:
+            if current_pair is None:
                 continue
 
-            output_path = self.process_scene(scene, current_pair, is_avatar)
+            output_path = self.process_scene(segment, current_pair)
             if output_path:
                 rendered_paths.append(output_path)
 

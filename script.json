@@ -1,0 +1,124 @@
+{
+    "voiceover_text": "Wait. Has this ever happened to you? You're just walking, minding your own business. Then a familiar smell hits you. Maybe it's old spices from a market, or the fresh cut grass after rain. Suddenly, your brain stops. You're not in the present anymore. You're somewhere else. It\u2019s like someone hit the rewind button in your mind. You're back in a memory, clear as day. You can see the light, feel the air. You hear the sounds of that specific day. Maybe it's your grandma's kitchen, or a special school trip. It feels so real, so vivid. This is literally you, reliving a past moment. A simple scent brings back a whole lost world. And then, just like that, it's gone. Until the next everyday smell.",
+    "segments": [
+        {
+            "id": 1,
+            "narration_text": "Wait. Has this ever happened to you?",
+            "caption_text": "Wait, has this **happened** to you?",
+            "visual_search_1": "person pausing thoughtfully street",
+            "visual_search_2": "cinematic human looking confused"
+        },
+        {
+            "id": 2,
+            "narration_text": "You're just walking, minding your own business.",
+            "caption_text": "Just walking, minding your **business**.",
+            "visual_search_1": "person walking casually city street",
+            "visual_search_2": "relatable everyday routine"
+        },
+        {
+            "id": 3,
+            "narration_text": "Then a familiar smell hits you.",
+            "caption_text": "Then a **familiar** smell hits.",
+            "visual_search_1": "person subtly reacting to smell",
+            "visual_search_2": "close-up face surprise realization"
+        },
+        {
+            "id": 4,
+            "narration_text": "Maybe it's old spices from a market, or the fresh cut grass after rain.",
+            "caption_text": "Old spices or **fresh** cut grass.",
+            "visual_search_1": "vibrant market spices close-up",
+            "visual_search_2": "dewy green grass after rain"
+        },
+        {
+            "id": 5,
+            "narration_text": "Suddenly, your brain stops.",
+            "caption_text": "Suddenly, your brain **stops**.",
+            "visual_search_1": "abstract visual brain activity pausing",
+            "visual_search_2": "person freezing mid-step internal thought"
+        },
+        {
+            "id": 6,
+            "narration_text": "You're not in the present anymore.",
+            "caption_text": "Not in the **present** anymore.",
+            "visual_search_1": "slight blur around person in crowd",
+            "visual_search_2": "dreamy fading present reality"
+        },
+        {
+            "id": 7,
+            "narration_text": "You're somewhere else.",
+            "caption_text": "You're **somewhere** else completely.",
+            "visual_search_1": "abstract visual transition portal",
+            "visual_search_2": "fading into a sepia-toned memory"
+        },
+        {
+            "id": 8,
+            "narration_text": "It\u2019s like someone hit the rewind button in your mind.",
+            "caption_text": "Hit the **rewind** button in mind.",
+            "visual_search_1": "visual effect old film rewinding",
+            "visual_search_2": "brain graphic with rewind symbol"
+        },
+        {
+            "id": 9,
+            "narration_text": "You're back in a memory, clear as day.",
+            "caption_text": "Back in a **memory**, clear as day.",
+            "visual_search_1": "warm cinematic childhood memory",
+            "visual_search_2": "vivid past scene from personal life"
+        },
+        {
+            "id": 10,
+            "narration_text": "You can see the light, feel the air.",
+            "caption_text": "See the light, **feel** the air.",
+            "visual_search_1": "golden hour sunlight through window",
+            "visual_search_2": "person feeling gentle breeze on skin"
+        },
+        {
+            "id": 11,
+            "narration_text": "You hear the sounds of that specific day.",
+            "caption_text": "Hear the **sounds** of that day.",
+            "visual_search_1": "close-up ear listening intently",
+            "visual_search_2": "subtle visual representation of sound waves"
+        },
+        {
+            "id": 12,
+            "narration_text": "Maybe it's your grandma's kitchen, or a special school trip.",
+            "caption_text": "Grandma's kitchen or a **school** trip.",
+            "visual_search_1": "cozy grandma's kitchen baking",
+            "visual_search_2": "children laughing on school bus"
+        },
+        {
+            "id": 13,
+            "narration_text": "It feels so real, so vivid.",
+            "caption_text": "Feels so **real**, so vivid.",
+            "visual_search_1": "person touching something from memory with wonder",
+            "visual_search_2": "close-up hand emotional connection"
+        },
+        {
+            "id": 14,
+            "narration_text": "This is literally you, reliving a past moment.",
+            "caption_text": "This is **literally** you reliving it.",
+            "visual_search_1": "person with teary eyes nostalgia",
+            "visual_search_2": "emotional face mixed joy sadness"
+        },
+        {
+            "id": 15,
+            "narration_text": "A simple scent brings back a whole lost world.",
+            "caption_text": "Simple scent brings back a **lost** world.",
+            "visual_search_1": "hand holding dried flower wistful look",
+            "visual_search_2": "old photo album fading memories"
+        },
+        {
+            "id": 16,
+            "narration_text": "And then, just like that, it's gone.",
+            "caption_text": "Then, just like that, **gone**.",
+            "visual_search_1": "memory scene fading quickly to present",
+            "visual_search_2": "person blinking, back to present reality"
+        },
+        {
+            "id": 17,
+            "narration_text": "Until the next everyday smell.",
+            "caption_text": "Until the next **everyday** smell.",
+            "visual_search_1": "person smiling faintly, looking anticipatory",
+            "visual_search_2": "everyday objects, subtle steam rising"
+        }
+    ]
+}
