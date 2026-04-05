@@ -33,15 +33,20 @@ def _wrap_text(text: str, max_chars: int = MAX_CHARS_PER_LINE) -> list[str]:
     """
     Returns a list of strings, each no longer than max_chars.
     Uses word-boundary wrapping so words are never cut mid-character.
+    Ensures that bolded phrases (**phrase**) are kept together as units.
     """
-    words = text.split()
+    # 1. Protect bold phrases by replacing internal spaces with non-breaking spaces
+    # This prevents split() from breaking gold phrases across lines
+    protected_text = re.sub(r'\*\*(.*?)\*\*', lambda m: m.group(0).replace(" ", "\u00A0"), text)
+    
+    words = protected_text.split()
     lines = []
     current_line = []
     current_len = 0
 
     for word in words:
-        # Check length WITHOUT ** markers to be accurate
-        clean_word = word.replace("**", "")
+        # Check length WITHOUT ** markers or tags to be accurate
+        clean_word = word.replace("**", "").replace("\u00A0", " ")
         if current_len + len(clean_word) + 1 > max_chars:
             if current_line:
                 lines.append(" ".join(current_line))
@@ -58,7 +63,8 @@ def _wrap_text(text: str, max_chars: int = MAX_CHARS_PER_LINE) -> list[str]:
     if current_line:
         lines.append(" ".join(current_line))
 
-    return lines
+    # 5. Restore regular spaces in each line
+    return [line.replace("\u00A0", " ") for line in lines]
 
 
 def _escape_drawtext(text: str) -> str:
