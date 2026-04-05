@@ -92,47 +92,42 @@ class AssetManager:
 
     def get_videos(self, script_data):
         """
-        NEW LOGIC: Downloads TWO videos per scene (A and B).
-        Returns a list of tuples: [(path_a, path_b), (path_a, path_b), ...]
+        Downloads TWO videos per segment (A and B).
+        Returns a list of tuples: [(path_a, path_b), ...]
         """
-        print("🎥 Starting Double-Feature Video Download...")
+        segments = script_data.get("segments", [])
+        print(f"🎥 Starting Video Downloads for {len(segments)} segments...")
         video_pairs = []
 
-        for scene in script_data:
-            scene_id = scene['id']
+        for segment in segments:
+            segment_id = segment['id']
             
             # 1. Get Search Terms
-            # Fallback to 'keywords' if visual_1/2 don't exist (compatibility mode)
-            query_a = scene.get('visual_1', scene.get('keywords', 'abstract'))
-            query_b = scene.get('visual_2', query_a) # Use A if B is missing
+            query_a = segment.get('visual_search_1', 'abstract')
+            query_b = segment.get('visual_search_2', query_a)
             
             # 2. Search & Download Clip A
             url_a = self.search_video(query_a)
             path_a = None
             if url_a:
-                path_a = self.download_video(url_a, f"scene_{scene_id}_a.mp4")
+                path_a = self.download_video(url_a, f"segment_{segment_id}_a.mp4")
             
             # 3. Search & Download Clip B
             url_b = self.search_video(query_b)
             path_b = None
             if url_b:
-                path_b = self.download_video(url_b, f"scene_{scene_id}_b.mp4")
+                path_b = self.download_video(url_b, f"segment_{segment_id}_b.mp4")
             
-            # 4. Fallback Logic (Self-Healing)
-            # If B fails, use A twice. If A fails, use B twice.
-            if not path_a and path_b: 
-                path_a = path_b
-                print(f"      ⚠️ Scene {scene_id} Clip A missing. Using Clip B for both.")
-            if not path_b and path_a: 
-                path_b = path_a
-                print(f"      ⚠️ Scene {scene_id} Clip B missing. Using Clip A for both.")
+            # 4. Fallback Logic
+            if not path_a and path_b: path_a = path_b
+            if not path_b and path_a: path_b = path_a
 
             # 5. Final Check
             if path_a and path_b:
                 video_pairs.append((path_a, path_b))
-                print(f"   ✅ Scene {scene_id} Ready (A + B).")
+                print(f"   ✅ Segment {segment_id} Ready.")
             else:
-                print(f"   ❌ Scene {scene_id} Completely Failed (No videos found).")
+                print(f"   ❌ Segment {segment_id} Failed (No videos).")
                 video_pairs.append(None)
 
         return video_pairs

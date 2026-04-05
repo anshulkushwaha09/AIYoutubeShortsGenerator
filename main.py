@@ -2,6 +2,14 @@ import asyncio
 import argparse
 import os
 import shutil
+import sys
+
+# Ensure UTF-8 output for Windows Console
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout.reconfigure(encoding='utf-8')
+if sys.stderr.encoding != 'utf-8':
+    sys.stderr.reconfigure(encoding='utf-8')
+
 from dotenv import load_dotenv
 from modules.brain import ContentBrain
 from modules.asset_manager import AssetManager
@@ -100,7 +108,7 @@ async def main(dry_run: bool = False):
     else:
         try:
             from modules.youtube_uploader import upload_video
-            video_title       = f"Did You Know? | {topic[:60]} #Shorts"
+            video_title       = f"Have you ever felt this? | {topic[:35]} 🕊️ #Shorts"
             video_description = brain.generate_description(topic, script)
             upload_video(final_video_path, title=video_title, description=video_description)
         except Exception as e:

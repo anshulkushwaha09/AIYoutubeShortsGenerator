@@ -4,7 +4,7 @@ import edge_tts
 from mutagen.mp3 import MP3
 
 class AudioEngine:
-    def __init__(self, voice="en-US-AvaNeural"):
+    def __init__(self, voice="en-US-ChristopherNeural"):
         self.voice = voice
         self.output_dir = os.path.join(os.getcwd(), "assets", "audio_clips")
         os.makedirs(self.output_dir, exist_ok=True)
@@ -13,12 +13,14 @@ class AudioEngine:
         """
         Generates MP3 with retry logic to handle connection drops.
         """
+        # Remove bold markers for TTS
+        clean_text = text.replace("**", "")
         output_path = os.path.join(self.output_dir, output_filename)
         
         for attempt in range(retries):
             try:
-                # Rate +10% for engagement
-                communicate = edge_tts.Communicate(text, self.voice, rate="+10%")
+                # Rate +12% for engagement
+                communicate = edge_tts.Communicate(clean_text, self.voice, rate="+12%")
                 await communicate.save(output_path)
                 return output_path
             
@@ -39,12 +41,20 @@ class AudioEngine:
             return 0.0
 
     async def process_script(self, script_data):
-        print(f"🎙️ Starting Audio Generation for {len(script_data)} scenes...")
+        """
+        Processes segments list and generates audio for each.
+        """
+        segments = script_data.get("segments", [])
+        print(f"🎙️ Starting Audio Generation for {len(segments)} segments...")
         
-        for scene in script_data:
-            scene_id = scene['id']
-            text = scene['text']
-            filename = f"voice_{scene_id}.mp3"
+        for segment in segments:
+            segment_id = segment['id']
+            # Defensive check for common LLM typos in keys
+            text = segment.get('narration_text', segment.get('naration_text', ''))
+            if not text:
+                print(f"      ⚠️ No narration text found for segment {segment_id}. Skipping.")
+                continue
+            filename = f"voice_{segment_id}.mp3"
             
             try:
                 # Generate Audio
@@ -53,18 +63,17 @@ class AudioEngine:
                 # Get Duration
                 duration = self.get_audio_duration(file_path)
                 
-                # Update Scene Data
-                scene['audio_path'] = file_path
-                scene['duration'] = duration
+                # Update Segment Data
+                segment['audio_path'] = file_path
+                segment['duration'] = duration
                 
-                print(f"   ✅ Scene {scene_id}: {duration:.2f}s generated.")
+                print(f"   ✅ Segment {segment_id}: {duration:.2f}s generated.")
                 
                 # CRITICAL: Sleep for 1 second to be polite to the API
-                # This prevents the "Connection Timeout" error
                 await asyncio.sleep(1) 
                 
             except Exception as e:
-                print(f"   ❌ Skipping Scene {scene_id} due to audio error.")
+                print(f"   ❌ Skipping Segment {segment_id} due to audio error.")
                 continue
             
         return script_data
