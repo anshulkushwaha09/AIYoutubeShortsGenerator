@@ -33,13 +33,13 @@ def _initialize_clients():
 
 clients = _initialize_clients()
 
-# Model fallback chain
+# Model fallback chain (Ordered by stability and quota availability)
 FALLBACK_MODELS = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-001",
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
+    "gemini-2.0-flash",      # Primary (Fast & Reliable)
+    "gemini-1.5-flash",      # Secondary (Standard)
+    "gemini-2.0-flash-lite", # Experimental
+    "gemini-2.5-flash",      # High-performance preview
+    "gemini-2.5-pro",        # Pro fallback
 ]
 
 def _call_with_fallback(prompt: str) -> str:
@@ -52,7 +52,13 @@ def _call_with_fallback(prompt: str) -> str:
     last_error = None
 
     for i, client_inst in enumerate(clients):
-        print(f"   🔑 Using API Key #{i+1}...")
+        # ── Pacing ──
+        # Mandatory sleep BEFORE every key attempt to avoid burst-limiting (15 RPM = 1 req / 4s)
+        time.sleep(2.0)
+        
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] 🔑 Using API Key #{i+1}...")
+        
         for model in FALLBACK_MODELS:
             try:
                 print(f"      🤖 Trying model: {model}...")
@@ -61,13 +67,23 @@ def _call_with_fallback(prompt: str) -> str:
 
             except Exception as e:
                 err_str = str(e)
+                last_error = e
+                
                 if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                    print(f"      ⚠️ Quota hit on {model} (Key #{i+1})")
+                    print(f"      ⚠️ Quota hit on {model} (Key #{i+1}). Skipping this key for now...")
+                    # Delay slightly after a failure before switching keys
+                    time.sleep(1.0)
+                    break 
+                
+                elif "503" in err_str or "unavailable" in err_str.lower():
+                    print(f"      ⚠️ Service busy on {model}. Retrying next model...")
+                    time.sleep(2.0) # Longer wait before model-retry
+                
                 elif "404" in err_str or "not found" in err_str.lower():
                     print(f"      ⚠️ Model {model} unavailable.")
                 else:
                     print(f"      ⚠️ Error on {model}: {e}")
-                last_error = e
+                    time.sleep(2.0)
 
     raise RuntimeError(
         "🛑 GOOGLE QUOTA ERROR: All Gemini models/keys have exceeded their quotas. "
