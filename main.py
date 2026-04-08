@@ -61,8 +61,9 @@ async def main(dry_run: bool = False):
     # 1. BRAIN: Get Script
     brain = ContentBrain()
     try:
-        topic = brain.get_trending_topic()
-        script = brain.generate_script(topic)
+        niche, topic = brain.get_trending_topic()
+        scenario = brain.get_specific_scenario(niche, topic)
+        script = brain.generate_script(topic, scenario)
     except Exception as e:
         print(f"❌ Brain Error: {e}")
         return
@@ -87,18 +88,21 @@ async def main(dry_run: bool = False):
     composer = Composer()
     final_scene_paths = composer.render_all_scenes(script, assets_map)
 
-    # 5. STITCH WITH TRANSITIONS
-    final_video_path = None
-    if final_scene_paths:
-        final_video_path = composer.concatenate_with_transitions(final_scene_paths)
-        clean_cache()
-    else:
-        print("❌ Failed to generate any scenes.")
+    print(f"🎬 Generated {len(final_scene_paths)} / {len(script['segments'])} scenes.")
+    if not final_scene_paths:
+        print("❌ No scenes were successfully rendered. Check ffmpeg output above.")
         return
+
+    # 5. STITCH WITH TRANSITIONS
+    final_video_path = composer.concatenate_with_transitions(final_scene_paths)
 
     if not final_video_path:
         print("❌ Final video creation failed.")
+        # We don't clean cache here so user can inspect scene_*.mp4 files
         return
+
+    # 6. Success: Clean up and finish
+    clean_cache()
 
     # 6. UPLOAD TO YOUTUBE (skipped in dry-run mode)
     if dry_run:
