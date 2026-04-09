@@ -235,24 +235,11 @@ class Composer:
                 video_stream = self._add_caption(video_stream, caption_text, scene_id)
 
             # ── Encode ────────────────────────────────────────────────────
-            # Redirect FFmpeg output to a log file to keep the console clean
-            log_path = os.path.join(self.temp_dir, "ffmpeg_render.log")
-            try:
-                runner = ffmpeg.output(
-                    video_stream, input_audio, output_path,
-                    vcodec='libx264', acodec='aac', pix_fmt='yuv420p', shortest=None
-                )
-                runner.run(overwrite_output=True, quiet=True) # Set quiet=True
-            except ffmpeg.Error as e:
-                with open(log_path, "a") as f:
-                    f.write(f"\n--- ERROR IN SEGMENT {scene_id} ---\n")
-                    f.write(e.stderr.decode('utf8') if e.stderr else str(e))
-                raise e
-            
-            if not os.path.exists(output_path):
-                print(f"   ❌ File not created: {output_path}")
-                return None
-                
+            runner = ffmpeg.output(
+                video_stream, input_audio, output_path,
+                vcodec='libx264', acodec='aac', pix_fmt='yuv420p', shortest=None
+            )
+            runner.run(overwrite_output=True, quiet=True)
             return output_path
 
         except ffmpeg.Error as e:
@@ -285,48 +272,37 @@ class Composer:
                 print("⚠️ Could not delete old file — it may be open in a player.")
 
         if not video_paths:
-            print("   ⚠️ No video paths to stitch!")
             return None
 
+        input1      = ffmpeg.input(video_paths[0])
+        v_stream    = input1.video
+        a_stream    = input1.audio
+        current_dur = self.get_duration(video_paths[0])
+
+        for i in range(1, len(video_paths)):
+            next_clip = ffmpeg.input(video_paths[i])
+            next_dur  = self.get_duration(video_paths[i])
+            trans_dur = 0.5
+            offset    = current_dur - trans_dur
+            effect    = random.choice(self.transitions)
+            print(f"   ✨ Transition {i}: '{effect}' at {offset:.2f}s")
+
+            v_stream = ffmpeg.filter(
+                [v_stream, next_clip.video], 'xfade',
+                transition=effect, duration=trans_dur, offset=offset
+            )
+            a_stream = ffmpeg.filter(
+                [a_stream, next_clip.audio], 'acrossfade', d=trans_dur
+            )
+            current_dur = (current_dur + next_dur) - trans_dur
+
         try:
-            input1      = ffmpeg.input(video_paths[0])
-            v_stream    = input1.video
-            a_stream    = input1.audio
-            current_dur = self.get_duration(video_paths[0])
-
-            for i in range(1, len(video_paths)):
-                next_clip = ffmpeg.input(video_paths[i])
-                next_dur  = self.get_duration(video_paths[i])
-                
-                # Transition safety
-                trans_dur = 0.5
-                if current_dur <= trans_dur:
-                    print(f"   ⚠️ Clip {i} too short ({current_dur:.2f}s), skipping transition.")
-                    # Simple concat without xfade
-                    v_stream = ffmpeg.concat(v_stream, next_clip.video, v=1, a=0)
-                    a_stream = ffmpeg.concat(a_stream, next_clip.audio, v=0, a=1)
-                    current_dur += next_dur
-                    continue
-
-                offset    = current_dur - trans_dur
-                effect    = random.choice(self.transitions)
-                print(f"   ✨ Transition {i}: '{effect}' at {offset:.2f}s")
-
-                v_stream = ffmpeg.filter(
-                    [v_stream, next_clip.video], 'xfade',
-                    transition=effect, duration=trans_dur, offset=offset
-                )
-                a_stream = ffmpeg.filter(
-                    [a_stream, next_clip.audio], 'acrossfade', d=trans_dur
-                )
-                current_dur = (current_dur + next_dur) - trans_dur
-
             runner = ffmpeg.output(
                 v_stream, a_stream, output_path,
                 vcodec='libx264', acodec='aac',
                 pix_fmt='yuv420p', movflags='faststart', preset='medium'
             )
-            runner.run(overwrite_output=True, quiet=True) # Keep console clean
+            runner.run(overwrite_output=True, quiet=False)
             print(f"✅ FINAL VIDEO SAVED: {output_path}")
             return output_path
 
