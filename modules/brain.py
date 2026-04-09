@@ -35,13 +35,13 @@ def _initialize_clients():
 
 clients = _initialize_clients()
 
-# Model fallback chain
+# Model fallback chain - using models verified as available in this environment
 FALLBACK_MODELS = [
-    "gemini-2.0-flash-lite",
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-001",
-    "gemini-2.5-flash",
-    "gemini-2.5-pro",
+    "gemini-2.0-flash",      # Standard 2.0
+    "gemini-2.0-flash-lite", # Lightweight 2.0
+    "gemini-2.5-flash",      # Next-gen Flash
+    "gemini-2.5-flash-lite", # Next-gen Flash Lite
+    "gemini-2.5-pro",       # Next-gen Pro (high quality)
 ]
 
 def _call_with_fallback(prompt: str) -> str:
@@ -64,9 +64,10 @@ def _call_with_fallback(prompt: str) -> str:
             except Exception as e:
                 err_str = str(e)
                 if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                    print(f"      ⚠️ Quota hit on {model} (Key #{i+1})")
-                elif "404" in err_str or "not found" in err_str.lower():
-                    print(f"      ⚠️ Model {model} unavailable.")
+                    print(f"      ⚠️ Quota hit on {model} (Key #{i+1}). Waiting 2s...")
+                    time.sleep(2) # Small delay to avoid rapid-fire quota burning
+                elif "404" in err_str or "not found" in err_str.lower() or "503" in err_str:
+                    print(f"      ⚠️ Model {model} unavailable or overloaded.")
                 else:
                     print(f"      ⚠️ Error on {model}: {e}")
                 last_error = e
