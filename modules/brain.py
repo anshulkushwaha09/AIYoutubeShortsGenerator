@@ -187,14 +187,14 @@ class ContentBrain:
 
     def generate_script(self, topic):
         """
-        Generates a 30-40 second Viral YouTube Shorts Storyteller script.
+        Generates a 30-35 second Viral YouTube Shorts Storyteller script.
         """
         print(f"📝 Writing Viral Storyteller Script for: {topic}...")
         prompt = f"""
     You are a Viral YouTube Shorts Storyteller.
 
     GOAL:
-    Create a 30–40 second highly engaging, emotional, and relatable story about: {topic}
+    Create a 30–35 second highly engaging, emotional, and relatable story about: {topic}
     The story must feel like a real human experience, not facts or teaching.
 
     🌍 LANGUAGE RULE:
@@ -212,17 +212,18 @@ class ContentBrain:
     🔥 HIGH RETENTION STRUCTURE:
     1. HOOK (0–3 sec): Start with a strong relatable line using scroll-stopping words like "wait," "suddenly," "but then," or "and you realize."
     2. RELATABLE MOMENT (3–10 sec): Show a real-life situation the viewer has experienced.
-    3. BUILD-UP (10–18 sec): Add emotional depth or a small mystery.
-    4. PATTERN INTERRUPT (18–20 sec): Inject ONE unexpected line that re-captures attention and breaks the rhythm.
-    5. MAIN REALIZATION (20–30 sec): Reveal the deeper meaning clearly. Do NOT hide the meaning until the end. Provide clarity, not confusion.
-    6. FINAL LINE / LOOP (30–40 sec): End with a powerful truth that CONNECTS BACK to the hook for a perfect playback loop.
+    3. BUILD-UP (10–15 sec): Add emotional depth or a small mystery.
+    4. PATTERN INTERRUPT (15–18 sec): Inject ONE unexpected line that re-captures attention and breaks the rhythm.
+    5. MAIN REALIZATION (18–28 sec): Reveal the deeper meaning clearly. Provide clarity, not confusion.
+    6. FINAL LINE / BAIT (28–35 sec): End with a powerful truth combined with a PSYCHOLOGICAL COMMENT BAIT.
 
     💥 VIRAL OPTIMIZATION RULES:
     - Viewer must understand the main idea clearly before the last 5 seconds.
     - Use "YOU" to connect emotionally.
     - Middle Pattern Interrupt: Include exactly ONE unexpected line in the middle of the story.
-    - Reveal: No long secrets. Make it meaningful and relatable early on.
     - Loop Effect: The last line must feel like it flows back into the first line seamlessly.
+    - 💬 COMMENT BAIT: The final line MUST include a subtle prompt for engagement. 
+      Examples: "Comment 'HOME' if you feel this.", "What would you do? Tell me below.", "Tag someone who needs to hear this.", "If you've been here, you're not alone. Comment 'DONE'."
 
     🚫 DO NOT USE:
     - "Did you know", "Scientists say", "Fact", "Actually"
@@ -250,7 +251,7 @@ class ContentBrain:
 
     📦 OUTPUT FORMAT (STRICT JSON - ENSURE CORRECT SPELLING OF KEYS):
     {{
-      "voiceover_text": "ONE continuous paragraph (110–130 words, simple English, emotional story)",
+      "voiceover_text": "ONE continuous paragraph (85–100 words, simple English, emotional story)",
       "segments": [
         {{
           "id": 1,
