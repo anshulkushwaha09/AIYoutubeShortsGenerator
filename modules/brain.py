@@ -116,23 +116,31 @@ class ContentBrain:
         "the feeling of a deep, restful sleep",
         "the relief of finally letting something go",
         "the magic of a perfect cup of coffee",
-        "the beauty of a small, unexpected kindness",
-        "the feeling of a fresh start on a Monday",
-        "why we love the smell of earth after rain",
-        "the comfort of a warm sweater in winter",
-        "the strange peace of a late-night drive",
-        "the feeling of a childhood home revisited",
-        "the quiet pride of a small achievement",
-        "the relief of a warm bowl of soup",
-        "the magic of a shared look in a crowd",
-        "the beauty of a sunset seen alone",
-        "why we love the sound of falling snow",
-        "the feeling of a new plant's first leaf",
+        "the simple joy of a morning stretch",
         "the comfort of a soft, old blanket",
+        "the paradox of choice and decision fatigue",
+        "digital burnout and the peace of being offline",
+        "modern stoicism for everyday stress",
+        "the specific magic of petrichor (smell of rain)",
+        "the relief of a cancelled social plan",
+        "the silent strength of being the quiet observer",
+        "the art of letting go of what hurts you",
+        "the strange sadness when a friend becomes a stranger",
+        "the reality of imposter syndrome",
+        "why we feel most alive as night owls",
+        "the 1% rule of daily self-improvement",
+        "unspoken workplace psychology and games",
+        "modern loneliness in a connected world",
+        "the life-changing habit of minimalism",
+        "the spotlight effect: why nobody is judging you",
+        "the physical weight of financial anxiety",
+        "creative block and the feeling of a frozen brain",
+        "the power of saying 'no' to social pressure",
+        "the strange nostalgia of visiting your childhood room",
     ]
 
     HISTORY_FILE = "topic_history.json"
-    HISTORY_LIMIT = 100  # Remember last 100 topics to avoid repeats
+    HISTORY_LIMIT = 500  # Remember last 500 topics to avoid repeats for a year
 
     def _load_history(self) -> list:
         if os.path.exists(self.HISTORY_FILE):
@@ -162,7 +170,8 @@ class ContentBrain:
 
         avoid_block = ""
         if history:
-            avoid_list = "\n".join(f"  - {t}" for t in history[-20:])
+            # Check last 50 topics to push AI towards deep variety
+            avoid_list = "\n".join(f"  - {t}" for t in history[-50:])
             avoid_block = (
                 f"\n\nIMPORTANT — You MUST pick something NEW. "
                 f"Do NOT suggest any of these recently used topics:\n{avoid_list}"
