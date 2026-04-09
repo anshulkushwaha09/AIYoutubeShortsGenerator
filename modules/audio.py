@@ -20,7 +20,7 @@ class AudioEngine:
         for attempt in range(retries):
             try:
                 # Rate +30% for hyper-paced elite engagement
-                communicate = edge_tts.Communicate(clean_text, self.voice, rate="+25%")
+                communicate = edge_tts.Communicate(clean_text, self.voice, rate="+22%")
                 await communicate.save(output_path)
                 return output_path
             
