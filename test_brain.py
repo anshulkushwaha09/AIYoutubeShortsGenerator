@@ -25,7 +25,7 @@ def test_script_generation():
     print("\n--- GENERATED SCRIPT ---")
     print(json.dumps(script, indent=2))
     
-    # Check for simple english and satisfied feeling
+    # Check for simple english and satisfied feelings
     # The brain.py prompt shows 'narration_text' within segments.
     text = " ".join([s.get("narration_text", "") for s in script.get("segments", [])])
     print("\n--- FULL TEXT ---")
