@@ -2,12 +2,10 @@ name: Thrice-Daily YouTube Shorts
 
 on:
   schedule:
-    # ── Run 1:  8:00 AM IST = 02:30 UTC  (morning browse) ──
-    - cron: "30 2 * * *"
-    # ── Run 2: 12:00 PM IST = 06:30 UTC  (lunch-time peak) ──
-    - cron: "30 6 * * *"
-    # ── Run 3:  7:00 PM IST = 13:30 UTC  (evening peak) ──
-    - cron: "30 13 * * *"
+    # ── Run 1:  6:00 AM IST = 00:30 UTC  (morning) ──
+    - cron: "30 0 * * *"
+    # ── Run 2:  6:00 PM IST = 12:30 UTC  (evening) ──
+    - cron: "30 12 * * *"
   workflow_dispatch:
     # Also allows manual trigger from GitHub → Actions tab
 
